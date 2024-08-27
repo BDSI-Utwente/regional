@@ -15,3 +15,7 @@ Imports:
     sharesimulatoR
 Remotes:
     chrishanretty/sharesimulatoR
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

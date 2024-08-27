@@ -1,0 +1,174 @@
+---
+title: "Simulating election results with `regional`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulating election results with `regional`}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(regional)
+library(tidyverse)
+
+```
+
+# Introduction
+
+The `regional` package is tailored to simulate the effects of different permutations 
+of multi-seat district electoral systems on party and regional proportionality. 
+
+The package is split into four main functions, that each handle a specific step in 
+simulating elections. They can be combined in various ways to simulate a wide variety 
+of electoral systems and conditions.
+
+## Simulating districts 
+
+The `simulate_districts` function can generate districts with random population sizes 
+and turnout rates. Note that it is entirely possible to bypass this function, and 
+use a known set of districts instead.
+
+```{r}
+# generate 12 districts, with equal sizes and uniform(0.5, 0.7) turnout rates
+districts <- simulate_districts(12) 
+districts
+
+# we can specify different functions for population size and turnout rates
+districts <- simulate_districts(
+  districts = paste("District", 1:13),
+  func_population = \(x) rnorm(x, 1e6, 1e5),
+  func_turnout = \(x) rep(0.7, x))
+districts
+
+# or skip this step, and manually specify a tibble...
+districts_manual <- tibble(
+  district = c("North", "East", "South", "West"),
+  population = c(1.2e6, 1.4e6, 0.8e6, 3.2e6),
+  turnout = c(0.65, 0.71, 0.64, 0.68)
+)
+districts_manual
+
+```
+
+## Simulating vote shares
+
+The `simulate_shares` function is a wrapper to generate vote shares for a given
+list of parties, for each of a given list of districts. By default, it uses a 
+Dirichlet distribution with parameters fitted to historical election results by <CITATION NEEDED>, but this can be overridden. 
+
+As with districts, this function should take the number of parties as it's only argument. The default implementation assumes parties are ordered from large to small, and generates semi-consistent results across each district. Note that vote shares should sum to 1 
+in each district, the `simulate_shares` function has an optional `normalize` argument
+that will enforce this requirement for you.
+
+```{r}
+# generate vote shares for districts generated above
+vote_shares <- simulate_shares(12, districts$district)
+vote_shares
+
+# we can specify party names, and override the vote share function.
+# using a uniform distribution and normalizing manually
+simulate_shares(c("Green", "Red", "Blue", "Polka dots"), districts$district, func = \(x) {
+  shares <- runif(x)
+  shares / sum(shares)
+})
+
+# a deterministic linear vote share, letting `simulate_shares` normalize for us
+simulate_shares(16, 12, \(x) x:1, normalize = TRUE)
+
+```
+
+While we could use vote shares to allocate seats, we'll want to calculate vote 
+counts so that any 'equalization seats' allocated nationally are allocated 
+proportional to voter counts in the districts. 
+
+```{r}
+votes <- vote_shares %>% 
+  left_join(districts) %>% 
+  mutate(vote_count = vote_share * turnout * population) %>% 
+  select(district, party, starts_with("vote_"))
+```
+
+The result is again a simple tibble with vote shares and counts per district and party, we could easily replace this tibble with historical results. We'll leave that as an exercise for the reader.
+
+## Allocating seats
+
+Knowing vote counts, we can allocate seats using some common seat allocation recipes with the `allocate_seats` function. Currently, only d'Hondt (`dh`), and Hare (`hare`) are implemented. 
+
+The implementation of these recipes is derived from the `electoral` package (CITATION NEEDED), with added support for vote thresholds and accounting for 'fixed' seats allocated previously. The main intended use case is to allocate a number of seats within the regions, before allocating a number of 'equalization seats' to ensure proportionality of national election results.
+
+> TODO: Thresholds are not yet implemented
+
+The above implies three rounds of seat allocation: (1) the number of seats per district, 
+(2) the number of seats per party within each district, and (3) the number of seats per party, compensating for seats already allocated in the districts. We'll run through an example where for a 150 seat parliament, 100 of which are allocated within the districts, 
+and the remaining 50 as equalization seats.
+
+```{r}
+# allocating seats to districts
+allocate_seats(districts$district, districts$population, 100)
+districts$seats <- allocate_seats(districts$district, districts$population, 100)$seats
+``` 
+
+Allocating seats within districts requires some more data wrangling.
+
+```{r} 
+# within each district, allocate seats to parties
+district_seats <- votes %>% 
+  
+  # create a nested data frame with vote counts per district
+  nest_by(district) %>% 
+  
+  # join in district metadata to get seats per district
+  left_join(districts) %>% 
+  
+  # map allocation function to each row (district)
+  purrr::pmap(\(district, seats, data, ...) {
+    allocate_seats(data$party, data$vote_count, seats) %>% 
+      mutate(district)
+  }) %>% 
+  
+  # combine the list of per-district results back into a single tibble
+  purrr::list_rbind()
+
+# long format of per party, per district votes and seats
+district_seats
+
+# we don't really need the various extra columns, so let's clean up a bit
+(district_seats <- district_seats %>% 
+  transmute(party, district, votes, seats))
+```
+
+Finally, we'll want to calculate the number of votes given in the districts, and allocate
+remaining seats to ensure national party proportionality. 
+
+```{r}
+district_seats_summed <- district_seats %>% 
+  summarize(votes = sum(votes), district_seats = sum(seats), .by = party)
+district_seats_summed
+
+# now allocate the full 150 seats, but 'fix' the seats already allocated in the districts
+national_seats <- allocate_seats(district_seats_summed$party, 
+                                 district_seats_summed$votes,
+                                 150,
+                                 district_seats_summed$district_seats)
+
+national_seats
+```
+
+Note that these national seats are not affiliated with a specific district, one may want to implement yet another round of allocation to distribute these seats to candidates from 
+the districts, but we'll again leave that as an exercise for the reader. 
+
+(NOTE: This is actually trickier than it appears, as you'd want to maintain proportional allocation across districts, while allocating for each party. The allocation in each party then depends on the allocation in all the other parties. Ideally, one would want to allocate all these seats at the same time, but that would require an extension of allocation methods to balance averages/remainders across multiple attributes simultaneously. If that exists, we may not have to bother with multiple rounds of allocation at all. Failing that, one could take into account seats allocated in parties 1...(n-1) while allocating seats for party n, but that implies the order in which seats are allocated affects which regional candidates are elected. Not relevant for our purposes, but may be relevant for implementation.) 
+
+## Proportionality of results
+
+The goal of this analysis is to simulate results using different conditions, and compare the proportionality of results. The `check_proportionality` function implements (will implement) several common measures of proportionality, and can be used to check the proportionality of results across parties, districts, or any other attribute.
+
+> Not yet implemented - patience!
+

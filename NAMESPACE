@@ -2,7 +2,6 @@
 
 export(allocate_seats)
 export(simulate_districts)
-export(simulate_election)
 export(simulate_shares)
 export(simulate_shares_dirichlet)
 importFrom(magrittr,"%>%")
