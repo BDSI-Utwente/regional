@@ -181,4 +181,32 @@ the districts, but we'll again leave that as an exercise for the reader.
 
 The goal of this analysis is to simulate results using different conditions, and compare the proportionality of results. The `check_proportionality` function implements (will implement) several common measures of proportionality, and can be used to check the proportionality of results across parties, districts, or any other attribute.
 
-> TODO: Proportionality methods are not yet implemented
+```{r}
+# (dis) proportionality across parties
+get_disproportionality_indices(national_seats$votes, national_seats$seats)
+
+```
+
+Calculating regional proportionality is slightly more involved, and further complicated 
+by the addition of national equalization seats not directly associated with any region. 
+For simplicity, let's assume all these seats are allocated to candidates associated with 
+the capital district of our example nation, District 1.
+
+```{r}
+# we have the baseline voter counts and number of seats per district already
+per_district_seats <- districts %>%
+  transmute(district, seats, votes = population * turnout)
+
+# we'll add the equalization seats to District 1 (which we've checked is the first row)
+per_district_seats[1, "seats"] <- per_district_seats[1, "seats"] + 50
+```
+
+We can then simply substitute parties for districts, votes for population, and
+so forth.
+
+```{r}
+get_disproportionality_indices(per_district_seats$votes, per_district_seats$seats)
+```
+
+Disproportionality across regions is higher, presumably because we've artificially
+(but not entirely unrealistically) assigned all remainder seats to a single region.
