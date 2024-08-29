@@ -9,7 +9,9 @@ allocate_seats(
   votes,
   seats = 150,
   fixed_seats = rep(0, length(parties)),
-  method = c("dh", "hare")
+  method = c("dh", "hare"),
+  threshold = 0,
+  fixed_seat_overrides_threshold = TRUE
 )
 }
 \arguments{
@@ -26,6 +28,13 @@ yet been allocated.}
 
 \item{method}{one of several methods of seat allocation. See details. Defaults
 to 'dh' for d'Hondt method.}
+
+\item{threshold}{vote share required to be eligible for any seats. Defaults to
+0, should be in the range \link{0,1}. Common values are between 0 and 0.05.}
+
+\item{fixed_seats_override_threshold}{should parties with fixed seats automatically
+be eligible for remainder seat allocation? This is common in some parliamentary
+systems. Defaults to \code{TRUE}.}
 }
 \value{
 A tibble containing several columns:

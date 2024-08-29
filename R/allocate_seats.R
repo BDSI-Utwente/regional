@@ -15,6 +15,11 @@ LARGEST_AVERAGES_METHODS <- c("dh")
 #'  yet been allocated.
 #' @param method one of several methods of seat allocation. See details. Defaults
 #'  to 'dh' for d'Hondt method.
+#' @param threshold vote share required to be eligible for any seats. Defaults to
+#'  0, should be in the range [0,1]. Common values are between 0 and 0.05.
+#' @param fixed_seats_override_threshold should parties with fixed seats automatically
+#'  be eligible for remainder seat allocation? This is common in some parliamentary
+#'  systems. Defaults to `TRUE`.
 #'
 #' @return A tibble containing several columns:
 #' \item{party}{party name}
@@ -26,13 +31,13 @@ LARGEST_AVERAGES_METHODS <- c("dh")
 #' \item{ideal_seats}{'ideal' number of seats under perfectly proportional
 #'  representation. Calculated as `votes / sum(votes) * seats`}
 #' @export
-#'
-#' @examples
 allocate_seats <- function(parties,
                            votes,
                            seats = 150,
                            fixed_seats = rep(0, length(parties)),
-                           method = c("dh", "hare")) {
+                           method = c("dh", "hare"),
+                           threshold = 0,
+                           fixed_seat_overrides_threshold = TRUE) {
 
   if (length(method) > 1) {
     method <- method[1]
@@ -51,7 +56,9 @@ allocate_seats <- function(parties,
                                votes,
                                seats,
                                fixed_seats,
-                               method) {
+                               method,
+                               threshold,
+                               fixed_seat_overrides_threshold) {
   # calculate quota depending on allocation method (only hare is implemented for now)
   if (method == "hare") {
     quota = sum(votes) / seats
@@ -62,13 +69,18 @@ allocate_seats <- function(parties,
   # vote counts required to fill quota for 1:n seats
   quota_votes = (1:seats) * quota
 
+  # votes required to meet threshold
+  threshold_votes = sum(votes) * threshold
+
   # create party votes data structure
   party_seats <- tibble(party = parties, votes, fixed_seats) %>%
-    mutate(ideal_seats = votes / sum(votes) * seats)
+    mutate(ideal_seats = votes / sum(votes) * seats,
+           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seats_overrides_threshold))
 
   # expand grid of party/quota needed for 1:n seats
   expand_grid(party = parties, quota_votes) %>%
     right_join(party_seats) %>%
+    filter(eligible) %>%
     mutate(
       # add rank-order for potential seats, lowest quota_votes (used) first
       rank = rank(quota_votes), .by = party,
@@ -100,7 +112,9 @@ allocate_seats <- function(parties,
                                votes,
                                seats,
                                fixed_seats,
-                               method) {
+                               method,
+                               threshold,
+                               fixed_seat_overrides_threshold) {
   # calculate quota depending on allocation method (only dHondt is implemented for now)
   if (method == "dh") {
     divisor = 1:seats
@@ -108,9 +122,14 @@ allocate_seats <- function(parties,
     stop(glue::glue("allocation method not implemented: {method}"))
   }
 
+
+  # votes required to meet threshold
+  threshold_votes = sum(votes) * threshold
+
   # create party data
   party_seats <- tibble(party = parties, votes, fixed_seats) %>%
-    mutate(ideal_seats = votes / sum(votes) * seats)
+    mutate(ideal_seats = votes / sum(votes) * seats,
+           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seats_overrides_threshold))
 
   # create quotients list
   quotients <- expand_grid(party = parties, divisor) %>%
@@ -130,6 +149,7 @@ allocate_seats <- function(parties,
   # Including a random component solves the tie-breaking problem without having
   # to implement an additional check.
   quotients %>%
+    filter(eligible) %>%
     arrange(desc(seat_is_fixed), desc(quotient), rnorm(n())) %>%
     slice_head(n = seats) %>%
     count(party, name = "seats") %>%
