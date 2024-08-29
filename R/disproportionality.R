@@ -78,7 +78,7 @@ loosemore_hanby_index <- function(votes, seats) {
 #' @return vector with named elements sli, gi, and lhi, corresponding to the Saint-Langue,
 #'  Gallagher, and Loosemore-Hanby indices respectively.
 #' @export
-get_disproportionality_indeces <- function(votes, seats) {
+get_disproportionality_indices <- function(votes, seats) {
   c(sli = saint_lague_index(votes, seats),
     gi = gallagher_index(votes, seats),
     lhi = loosemore_hanby_index(votes, seats))

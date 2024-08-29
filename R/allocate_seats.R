@@ -44,9 +44,9 @@ allocate_seats <- function(parties,
   }
 
   if (method %in% LARGEST_REMAINDER_METHODS) {
-    .allocate_seats_lr(parties, votes, seats, fixed_seats, method)
+    .allocate_seats_lr(parties, votes, seats, fixed_seats, method, threshold, fixed_seat_overrides_threshold)
   } else if (method %in% LARGEST_AVERAGES_METHODS) {
-    .allocate_seats_la(parties, votes, seats, fixed_seats, method)
+    .allocate_seats_la(parties, votes, seats, fixed_seats, method, threshold, fixed_seat_overrides_threshold)
   } else {
     stop(glue::glue("unknown allocation method: {method}"))
   }
@@ -75,7 +75,7 @@ allocate_seats <- function(parties,
   # create party votes data structure
   party_seats <- tibble(party = parties, votes, fixed_seats) %>%
     mutate(ideal_seats = votes / sum(votes) * seats,
-           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seats_overrides_threshold))
+           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seat_overrides_threshold))
 
   # expand grid of party/quota needed for 1:n seats
   expand_grid(party = parties, quota_votes) %>%
@@ -129,7 +129,7 @@ allocate_seats <- function(parties,
   # create party data
   party_seats <- tibble(party = parties, votes, fixed_seats) %>%
     mutate(ideal_seats = votes / sum(votes) * seats,
-           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seats_overrides_threshold))
+           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seat_overrides_threshold))
 
   # create quotients list
   quotients <- expand_grid(party = parties, divisor) %>%
