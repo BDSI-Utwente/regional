@@ -1,12 +1,9 @@
 Package: regional
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Simulation and evaluation of multi-candidate district elections under various circumstances
+Version: 0.0.1
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Karel", "Kroeze", , "k.a.kroeze@utwente.nl", role = c("aut", "cre"))
+Description: Simulation and evaluation of multi-candidate district elections under various circumstances. Seat allocation under common allocation methods, vote share thresholds, and accounting for already allocated seats in multi-phase seat allocation (e.g., when allocation national seats to compensate for disproportionality in seats awarded in districts)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
@@ -19,3 +16,4 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+License: MIT + file LICENSE
