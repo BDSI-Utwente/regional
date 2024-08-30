@@ -79,7 +79,7 @@ allocate_seats <- function(parties,
 
   # expand grid of party/quota needed for 1:n seats
   expand_grid(party = parties, quota_votes) %>%
-    right_join(party_seats) %>%
+    right_join(party_seats, by = join_by(party)) %>%
     filter(eligible) %>%
     mutate(
       # add rank-order for potential seats, lowest quota_votes (used) first
@@ -100,7 +100,7 @@ allocate_seats <- function(parties,
 
     # add back in party-level data we started with, and fill in seats = 0 for
     # parties that did not get any seats
-    right_join(party_seats) %>%
+    right_join(party_seats, by = join_by(party)) %>%
     replace_na(list(seats = 0)) %>%
 
     # some final cleanup...
