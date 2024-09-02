@@ -81,13 +81,15 @@ allocate_seats <- function(parties,
   # expand grid of party/quota needed for 1:n seats
   expand_grid(party = parties, quota_votes) %>%
     right_join(party_seats, by = join_by(party)) %>%
-    filter(eligible) %>%
     mutate(
       # add rank-order for potential seats, lowest quota_votes (used) first
       rank = rank(quota_votes), .by = party,
 
       # any potential seat with a rank <= fixed seats is already assigned
       seat_is_fixed = rank <= fixed_seats) %>%
+
+    # potential seats must be eligible (i.e., meet threshold) or fixed
+    filter(eligible | seat_is_fixed) %>%
 
     # sort potential seats by fixed status, then remaining votes quota, and last
     # by a random component to settle ties
@@ -150,7 +152,7 @@ allocate_seats <- function(parties,
   # Including a random component solves the tie-breaking problem without having
   # to implement an additional check.
   quotients %>%
-    filter(eligible) %>%
+    filter(eligible | seat_is_fixed) %>%
     arrange(desc(seat_is_fixed), desc(quotient), rnorm(n())) %>%
     slice_head(n = seats) %>%
     count(party, name = "seats") %>%
