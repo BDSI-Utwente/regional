@@ -19,7 +19,7 @@ LARGEST_AVERAGES_METHODS <- c("dh")
 #'  0, should be in the range [0,1]. Common values are between 0 and 0.05.
 #' @param fixed_seats_override_threshold should parties with fixed seats automatically
 #'  be eligible for remainder seat allocation? This is common in some parliamentary
-#'  systems. Defaults to `TRUE`.
+#'  systems. Defaults to `FALSE`.
 #'
 #' @return A tibble containing several columns:
 #' \item{party}{party name}
@@ -33,11 +33,11 @@ LARGEST_AVERAGES_METHODS <- c("dh")
 #' @export
 allocate_seats <- function(parties,
                            votes,
-                           seats = 150,
+                           seats,
                            fixed_seats = rep(0, length(parties)),
                            method = c("dh", "hare"),
                            threshold = 0,
-                           fixed_seat_overrides_threshold = TRUE) {
+                           fixed_seat_overrides_threshold = FALSE) {
 
   if (length(method) > 1) {
     method <- method[1]
