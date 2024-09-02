@@ -59,6 +59,7 @@ allocate_seats <- function(parties,
                                method,
                                threshold,
                                fixed_seat_overrides_threshold) {
+
   # calculate quota depending on allocation method (only hare is implemented for now)
   if (method == "hare") {
     quota = sum(votes) / seats
@@ -157,4 +158,19 @@ allocate_seats <- function(parties,
     replace_na(replace = list(seats = 0)) %>%
     mutate(allocated_seats = seats - fixed_seats) %>%
     relocate(party, votes, seats, fixed_seats, allocated_seats, ideal_seats)
+}
+
+
+#' Allocate seats per the Dutch Parliamentary electoral system.
+#'
+#' This is a thin wrapper around `allocate_seats(...)` using default settings as
+#' used in Dutch for the Dutch house of representatives ("Tweede Kamer").
+#'
+#' @param parties vector of party names
+#' @param votes vector of vote counts, of the same length as `parties`
+#'
+#' @return see `allocate_votes`
+#' @export
+allocate_seats_nl <- function(parties, votes) {
+  allocate_seats(parties, votes, 150, threshold = 1/150, method = "dh")
 }

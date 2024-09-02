@@ -64,6 +64,30 @@ loosemore_hanby_index <- function(votes, seats) {
 }
 
 
+#' Absolute seat difference
+#'
+#' Absolute difference in seats from a known baseline seats allocation method.
+#'
+#' Calculates seat allocation under the baseline, then returns the sum of absolute
+#' seat differences. The sum is divided by two, as each seat gained by one party,
+#' is always a seat lost by another party.
+#'
+#' @param votes vector of votes
+#' @param seats vector of allocated seats
+#' @param baseline_seats_fn function to calculate baseline seat allocation to
+#' compare with. Should take a vector of vote counts as the sole argument. The
+#' default, a thin wrapper around `allocate_seats_nl`, follows seat allocation
+#' for the Dutch Parliament.
+#'
+#' @return integer sum of absolute seat differences
+#' @export
+seat_difference <- function(votes, seats, baseline_seats_fn = \(votes) allocate_seats_nl(1:length(votes), votes)$seats) {
+  baseline_seats <- baseline_seats_fn(votes)
+  diff <- (baseline_seats - seats)
+  sum(abs(diff)) / 2
+}
+
+
 #' Get indices of disproportionality
 #'
 #' Given two vectors of vote counts and allocated seats, calculate the Loosemore-Hanby,
@@ -75,11 +99,13 @@ loosemore_hanby_index <- function(votes, seats) {
 #' @param votes vector of votes for each party
 #' @param seats vector of seats allocated to each party
 #'
-#' @return vector with named elements sli, gi, and lhi, corresponding to the Saint-Langue,
-#'  Gallagher, and Loosemore-Hanby indices respectively.
+#' @return vector with named elements sli, gi, lhi, and diff, corresponding to
+#' the Saint-Langue, Gallagher, Loosemore-Hanby and absolute seat difference
+#' indices,  respectively.
 #' @export
 get_disproportionality_indices <- function(votes, seats) {
   c(sli = saint_lague_index(votes, seats),
     gi = gallagher_index(votes, seats),
-    lhi = loosemore_hanby_index(votes, seats))
+    lhi = loosemore_hanby_index(votes, seats),
+    diff = seat_difference(votes, seats))
 }

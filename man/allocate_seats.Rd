@@ -7,11 +7,11 @@
 allocate_seats(
   parties,
   votes,
-  seats = 150,
+  seats,
   fixed_seats = rep(0, length(parties)),
   method = c("dh", "hare"),
   threshold = 0,
-  fixed_seat_overrides_threshold = TRUE
+  fixed_seat_overrides_threshold = FALSE
 )
 }
 \arguments{
@@ -34,7 +34,7 @@ to 'dh' for d'Hondt method.}
 
 \item{fixed_seats_override_threshold}{should parties with fixed seats automatically
 be eligible for remainder seat allocation? This is common in some parliamentary
-systems. Defaults to \code{TRUE}.}
+systems. Defaults to \code{FALSE}.}
 }
 \value{
 A tibble containing several columns:

@@ -4,12 +4,12 @@
 \name{regional-package}
 \alias{regional}
 \alias{regional-package}
-\title{regional: What the Package Does (One Line, Title Case)}
+\title{regional: Simulation and evaluation of multi-candidate district elections under various circumstances}
 \description{
-What the package does (one paragraph).
+Simulation and evaluation of multi-candidate district elections under various circumstances. Seat allocation under common allocation methods, vote share thresholds, and accounting for already allocated seats in multi-phase seat allocation (e.g., when allocation national seats to compensate for disproportionality in seats awarded in districts)
 }
 \author{
-\strong{Maintainer}: First Last \email{first.last@example.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Karel Kroeze \email{k.a.kroeze@utwente.nl}
 
 }
 \keyword{internal}
