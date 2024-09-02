@@ -1,6 +1,6 @@
 Package: regional
 Title: Simulation and evaluation of multi-candidate district elections under various circumstances
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: 
     person("Karel", "Kroeze", , "k.a.kroeze@utwente.nl", role = c("aut", "cre"))
 Description: Simulation and evaluation of multi-candidate district elections under various circumstances. Seat allocation under common allocation methods, vote share thresholds, and accounting for already allocated seats in multi-phase seat allocation (e.g., when allocation national seats to compensate for disproportionality in seats awarded in districts)
