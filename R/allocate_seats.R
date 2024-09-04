@@ -43,10 +43,29 @@ allocate_seats <- function(parties,
     method <- method[1]
   }
 
+
   if (method %in% LARGEST_REMAINDER_METHODS) {
-    .allocate_seats_lr(parties, votes, seats, fixed_seats, method, threshold, fixed_seat_overrides_threshold)
+    .allocate_seats_lr(
+      parties,
+      votes,
+      seats,
+      fixed_seats,
+      method,
+      threshold,
+      fixed_seat_overrides_threshold
+    ) |>
+      arrange(desc(votes), desc(seats))
   } else if (method %in% LARGEST_AVERAGES_METHODS) {
-    .allocate_seats_la(parties, votes, seats, fixed_seats, method, threshold, fixed_seat_overrides_threshold)
+    .allocate_seats_la(
+      parties,
+      votes,
+      seats,
+      fixed_seats,
+      method,
+      threshold,
+      fixed_seat_overrides_threshold
+    ) |>
+      arrange(desc(votes), desc(seats))
   } else {
     stop(glue::glue("unknown allocation method: {method}"))
   }
