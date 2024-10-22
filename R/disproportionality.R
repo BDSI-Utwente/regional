@@ -83,7 +83,7 @@ loosemore_hanby_index <- function(votes, seats) {
 #' @export
 seat_difference <- function(votes, seats, baseline_seats_fn = \(votes) allocate_seats_nl(1:length(votes), votes)$seats) {
   baseline_seats <- baseline_seats_fn(votes)
-  diff <- (baseline_seats - seats)
+  diff <- (baseline_seats - seats[order(-votes, -seats)])
   sum(abs(diff)) / 2
 }
 
