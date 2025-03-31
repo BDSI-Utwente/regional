@@ -13,17 +13,35 @@
 #'  should be in the range 0-1.
 #'
 #' @return a tibble with three columns:
-#'  \item{district} district name (or index)
-#'  \item{district_population} district population
-#'  \item{district_turnout} district turnout rate
-#' @export
+#'   \item{district}{district name (or index)}
+#'   \item{district_population}{district population}
+#'   \item{district_turnout}{district turnout rate}
 #'
+#' @export
 #' @examples
-simulate_districts <- function(districts, func_population = \(n_districts) rep(15e6 / n_districts, n_districts), func_turnout = \(n_districts) runif(n_districts, 0.5, 0.7)) {
+#' # Simulate a vector of districts with some basic data
+#' simulate_districts(paste("District", 1:12))
+#'
+#' # supply functions for voter population and turnout range
+#' # random population in 300.000 - 1.000.000 range
+#' fn_population <- \(n) runif(n, 0.3, 1) * 1e6
+#' # fixed 80% turnout
+#' fn_turnout <- \(n) 0.8
+#' simulate_districts(12, fn_population, fn_turnout)
+#'
+simulate_districts <- function(
+  districts,
+  func_population = \(n_districts) rep(15e6 / n_districts, n_districts),
+  func_turnout = \(n_districts) stats::runif(n_districts, 0.5, 0.7)
+) {
   if (length(districts) == 1 & is.numeric(districts)) {
     districts <- 1:districts
   }
   n_districts <- length(districts)
 
-  tibble(district = districts, population = func_population(n_districts), turnout = func_turnout(n_districts))
+  tibble::tibble(
+    district = districts,
+    population = func_population(n_districts),
+    turnout = func_turnout(n_districts)
+  )
 }

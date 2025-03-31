@@ -7,7 +7,7 @@
 simulate_districts(
   districts,
   func_population = function(n_districts) rep(1.5e+07/n_districts, n_districts),
-  func_turnout = function(n_districts) runif(n_districts, 0.5, 0.7)
+  func_turnout = function(n_districts) stats::runif(n_districts, 0.5, 0.7)
 )
 }
 \arguments{
@@ -26,9 +26,9 @@ should be in the range 0-1.}
 }
 \value{
 a tibble with three columns:
-\item{district} district name (or index)
-\item{district_population} district population
-\item{district_turnout} district turnout rate
+\item{district}{district name (or index)}
+\item{district_population}{district population}
+\item{district_turnout}{district turnout rate}
 }
 \description{
 Helper function to simulate district population size and turnout rates.

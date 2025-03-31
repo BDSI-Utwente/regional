@@ -16,8 +16,8 @@ LARGEST_AVERAGES_METHODS <- c("dh")
 #' @param method one of several methods of seat allocation. See details. Defaults
 #'  to 'dh' for d'Hondt method.
 #' @param threshold vote share required to be eligible for any seats. Defaults to
-#'  0, should be in the range [0,1]. Common values are between 0 and 0.05.
-#' @param fixed_seats_override_threshold should parties with fixed seats automatically
+#'  0, should be in the range \[0,1\]. Common values are between 0 and 0.05.
+#' @param fixed_seat_overrides_threshold should parties with fixed seats automatically
 #'  be eligible for remainder seat allocation? This is common in some parliamentary
 #'  systems. Defaults to `FALSE`.
 #'
@@ -31,18 +31,55 @@ LARGEST_AVERAGES_METHODS <- c("dh")
 #' \item{ideal_seats}{'ideal' number of seats under perfectly proportional
 #'  representation. Calculated as `votes / sum(votes) * seats`}
 #' @export
-allocate_seats <- function(parties,
-                           votes,
-                           seats,
-                           fixed_seats = rep(0, length(parties)),
-                           method = c("dh", "hare"),
-                           threshold = 0,
-                           fixed_seat_overrides_threshold = FALSE) {
-
+#' @examples
+#' # Given a set of parties ...
+#' parties <- paste("Party", letters[1:6])
+#'
+#' # ... a vector of votes cast ...
+#' votes <- round(runif(6) * 1e6)
+#'
+#' # ... and total number of seats available ...
+#' seats <- 100
+#'
+#' # ... allocate seats to parties proportional to their vote count
+#' allocate_seats(parties, votes, seats)
+#'
+#' # We can also add a number of 'fixed' seats, that parties are
+#' # guaranteed to get.
+#' # For instance, we can ensure each party gets at least 10 seats...
+#' allocate_seats(parties, votes, seats, fixed_seats = rep(10, 6))
+#'
+#' # We may want limit fragmentation and only assign seats to parties
+#' # larger than a given threshold.
+#' # Create known list of large and small parties
+#' votes <- round(c(0.4, 0.3, 0.2, 0.06, 0.03, 0.01) * 1e6)
+#' allocate_seats(parties, votes, seats, threshold = 0.05)
+#'
+#' # Or even do both at the same time...
+#' allocate_seats(parties, votes, seats, threshold = 0.05, fixed_seats = rep(10, 6))
+#' # note that fixed seats are NEVER taken away, regardless of the
+#' # used threshold. The number of seats available to remaining parties
+#' # is automatically compensated.
+#'
+#' # In some electoral systems, parties that gain a regional seat
+#' # are exempt from a national threshold. If we give all parties a single
+#' # fixed seat, we can see that Party e will be allocated 2 additional
+#' # seats, even though the party does not meet the vote share threshold.
+#' # Party f would now also be eligible for additional seats, but doesn't
+#' # have to vote share to be allocated one.
+#' allocate_seats(parties, votes, seats, threshold = 0.05, fixed_seats = rep(1, 6), fixed_seat_overrides_threshold = TRUE)
+allocate_seats <- function(
+  parties,
+  votes,
+  seats,
+  fixed_seats = rep(0, length(parties)),
+  method = c("dh", "hare"),
+  threshold = 0,
+  fixed_seat_overrides_threshold = FALSE
+) {
   if (length(method) > 1) {
     method <- method[1]
   }
-
 
   if (method %in% LARGEST_REMAINDER_METHODS) {
     .allocate_seats_lr(
@@ -54,7 +91,7 @@ allocate_seats <- function(parties,
       threshold,
       fixed_seat_overrides_threshold
     ) |>
-      arrange(desc(votes), desc(seats))
+      dplyr::arrange(dplyr::desc(votes), dplyr::desc(seats))
   } else if (method %in% LARGEST_AVERAGES_METHODS) {
     .allocate_seats_la(
       parties,
@@ -65,20 +102,21 @@ allocate_seats <- function(parties,
       threshold,
       fixed_seat_overrides_threshold
     ) |>
-      arrange(desc(votes), desc(seats))
+      dplyr::arrange(dplyr::desc(votes), dplyr::desc(seats))
   } else {
     stop(glue::glue("unknown allocation method: {method}"))
   }
 }
 
-.allocate_seats_lr <- function(parties,
-                               votes,
-                               seats,
-                               fixed_seats,
-                               method,
-                               threshold,
-                               fixed_seat_overrides_threshold) {
-
+.allocate_seats_lr <- function(
+  parties,
+  votes,
+  seats,
+  fixed_seats,
+  method,
+  threshold,
+  fixed_seat_overrides_threshold
+) {
   # calculate quota depending on allocation method (only hare is implemented for now)
   if (method == "hare") {
     quota = sum(votes) / seats
@@ -93,50 +131,68 @@ allocate_seats <- function(parties,
   threshold_votes = sum(votes) * threshold
 
   # create party votes data structure
-  party_seats <- tibble(party = parties, votes, fixed_seats) %>%
-    mutate(ideal_seats = votes / sum(votes) * seats,
-           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seat_overrides_threshold))
+  party_seats <- tibble::tibble(party = parties, votes, fixed_seats) %>%
+    dplyr::mutate(
+      ideal_seats = votes / sum(votes) * seats,
+      eligible = votes > threshold_votes |
+        (fixed_seats > 0 & fixed_seat_overrides_threshold)
+    )
 
   # expand grid of party/quota needed for 1:n seats
-  expand_grid(party = parties, quota_votes) %>%
-    right_join(party_seats, by = join_by(party)) %>%
-    mutate(
+  tidyr::expand_grid(party = parties, quota_votes) %>%
+    dplyr::right_join(party_seats, by = dplyr::join_by(party)) %>%
+    dplyr::mutate(
       # add rank-order for potential seats, lowest quota_votes (used) first
-      rank = rank(quota_votes), .by = party,
+      rank = rank(quota_votes),
+      .by = party,
 
       # any potential seat with a rank <= fixed seats is already assigned
-      seat_is_fixed = rank <= fixed_seats) %>%
+      seat_is_fixed = rank <= fixed_seats
+    ) %>%
 
     # potential seats must be eligible (i.e., meet threshold) or fixed
-    filter(eligible | seat_is_fixed) %>%
+    dplyr::filter(eligible | seat_is_fixed) %>%
 
     # sort potential seats by fixed status, then remaining votes quota, and last
     # by a random component to settle ties
-    arrange(desc(seat_is_fixed), desc(votes - quota_votes), rnorm(n())) %>%
+    dplyr::arrange(
+      dplyr::desc(seat_is_fixed),
+      dplyr::desc(votes - quota_votes),
+      stats::rnorm(dplyr::n())
+    ) %>%
 
     # select top n rows, where n is the number of seats
-    slice_head(n = seats) %>%
+    dplyr::slice_head(n = seats) %>%
 
     # summarize as seats per party
-    count(party, name = "seats") %>%
+    dplyr::count(party, name = "seats") %>%
 
     # add back in party-level data we started with, and fill in seats = 0 for
     # parties that did not get any seats
-    right_join(party_seats, by = join_by(party)) %>%
-    replace_na(list(seats = 0)) %>%
+    dplyr::right_join(party_seats, by = dplyr::join_by(party)) %>%
+    tidyr::replace_na(list(seats = 0)) %>%
 
     # some final cleanup...
-    mutate(allocated_seats = seats - fixed_seats) %>%
-    relocate(party, votes, seats, fixed_seats, allocated_seats, ideal_seats)
+    dplyr::mutate(allocated_seats = seats - fixed_seats) %>%
+    dplyr::relocate(
+      party,
+      votes,
+      seats,
+      fixed_seats,
+      allocated_seats,
+      ideal_seats
+    )
 }
 
-.allocate_seats_la <- function(parties,
-                               votes,
-                               seats,
-                               fixed_seats,
-                               method,
-                               threshold,
-                               fixed_seat_overrides_threshold) {
+.allocate_seats_la <- function(
+  parties,
+  votes,
+  seats,
+  fixed_seats,
+  method,
+  threshold,
+  fixed_seat_overrides_threshold
+) {
   # calculate quota depending on allocation method (only dHondt is implemented for now)
   if (method == "dh") {
     divisor = 1:seats
@@ -144,24 +200,26 @@ allocate_seats <- function(parties,
     stop(glue::glue("allocation method not implemented: {method}"))
   }
 
-
   # votes required to meet threshold
   threshold_votes = sum(votes) * threshold
 
   # create party data
-  party_seats <- tibble(party = parties, votes, fixed_seats) %>%
-    mutate(ideal_seats = votes / sum(votes) * seats,
-           eligible = votes > threshold_votes | (fixed_seats > 0 & fixed_seat_overrides_threshold))
+  party_seats <- tibble::tibble(party = parties, votes, fixed_seats) %>%
+    dplyr::mutate(
+      ideal_seats = votes / sum(votes) * seats,
+      eligible = votes > threshold_votes |
+        (fixed_seats > 0 & fixed_seat_overrides_threshold)
+    )
 
   # create quotients list
-  quotients <- expand_grid(party = parties, divisor) %>%
-    left_join(party_seats, by = join_by(party)) %>%
-    mutate(quotient = votes / divisor) %>%
-    mutate(quotient_rank = rank(-quotient), .by = party) %>%
+  quotients <- tidyr::expand_grid(party = parties, divisor) %>%
+    dplyr::left_join(party_seats, by = dplyr::join_by(party)) %>%
+    dplyr::mutate(quotient = votes / divisor) %>%
+    dplyr::mutate(quotient_rank = rank(-quotient), .by = party) %>%
 
     # mark seats that were already allocated (in districts) as assigned, so we
     # can include them regardless of the quotient.
-    mutate(seat_is_fixed = quotient_rank <= fixed_seats)
+    dplyr::mutate(seat_is_fixed = quotient_rank <= fixed_seats)
 
   # order by already assigned, max quotient, and break ties with a random component
   # then take the top rows as seat winners.
@@ -171,14 +229,25 @@ allocate_seats <- function(parties,
   # Including a random component solves the tie-breaking problem without having
   # to implement an additional check.
   quotients %>%
-    filter(eligible | seat_is_fixed) %>%
-    arrange(desc(seat_is_fixed), desc(quotient), rnorm(n())) %>%
-    slice_head(n = seats) %>%
-    count(party, name = "seats") %>%
-    right_join(party_seats, by = join_by(party)) %>%
-    replace_na(replace = list(seats = 0)) %>%
-    mutate(allocated_seats = seats - fixed_seats) %>%
-    relocate(party, votes, seats, fixed_seats, allocated_seats, ideal_seats)
+    dplyr::filter(eligible | seat_is_fixed) %>%
+    dplyr::arrange(
+      dplyr::desc(seat_is_fixed),
+      dplyr::desc(quotient),
+      stats::rnorm(dplyr::n())
+    ) %>%
+    dplyr::slice_head(n = seats) %>%
+    dplyr::count(party, name = "seats") %>%
+    dplyr::right_join(party_seats, by = dplyr::join_by(party)) %>%
+    tidyr::replace_na(replace = list(seats = 0)) %>%
+    dplyr::mutate(allocated_seats = seats - fixed_seats) %>%
+    dplyr::relocate(
+      party,
+      votes,
+      seats,
+      fixed_seats,
+      allocated_seats,
+      ideal_seats
+    )
 }
 
 
@@ -193,5 +262,5 @@ allocate_seats <- function(parties,
 #' @return see `allocate_votes`
 #' @export
 allocate_seats_nl <- function(parties, votes) {
-  allocate_seats(parties, votes, 150, threshold = 1/150, method = "dh")
+  allocate_seats(parties, votes, 150, threshold = 1 / 150, method = "dh")
 }

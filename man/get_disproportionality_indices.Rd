@@ -12,8 +12,9 @@ get_disproportionality_indices(votes, seats)
 \item{seats}{vector of seats allocated to each party}
 }
 \value{
-vector with named elements sli, gi, and lhi, corresponding to the Saint-Langue,
-Gallagher, and Loosemore-Hanby indices respectively.
+vector with named elements sli, gi, lhi, and diff, corresponding to
+the Saint-Langue, Gallagher, Loosemore-Hanby and absolute seat difference
+indices,  respectively.
 }
 \description{
 Given two vectors of vote counts and allocated seats, calculate the Loosemore-Hanby,
@@ -22,4 +23,7 @@ Gallagher, and Saint-Langue indices of disproportionality.
 \details{
 This is simply a wrapper around the individual indices to simplify calculation
 of multiple indices at once.
+
+Note that this function assumes usage in a given context, and is likely of limited use
+outside of that context. Consider simply calling the indices you need individually.
 }

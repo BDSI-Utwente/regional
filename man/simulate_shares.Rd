@@ -19,12 +19,16 @@ simulate_shares(
 \item{func}{function used to generate vote shares in each district. Is called as \code{func(N)}
 for each district, where \code{N} is the number of parties.
 Defaults to \code{simulate_shares_dichlet}.}
+
+\item{normalize}{logical, whether to normalize the vote shares so that they sum to 1. Defaults
+to \code{FALSE}, in which case the user is expected to ensure \code{func} returns a vector of
+vote shares that sum to 1.}
 }
 \value{
 tibble containing three columns:
-\item{party} the party name (or index)
-\item{district} the district name (or index)
-\item{vote_share} vote share for this party, in this district.
+\item{party}{the party name (or index)}
+\item{district}{the district name (or index)}
+\item{vote_share}{vote share for this party, in this district.}
 }
 \description{
 Simulate vote shares for a given list of parties and districts.
@@ -35,26 +39,25 @@ district. The parties participating in each district are assumed to be the
 same for each district.
 }
 \examples{
+     # Simulate vote shares for 16 parties in 12 districts, using the default
+     # dirichlet distribution.
+     simulate_shares(16, 12)
 
-# Simulate vote shares for 16 parties in 12 districts, using the default
-# dirichlet distribution.
-simulate_shares(16, 12)
+     # specify a known list of parties and districts
+     parties <- c("Green", "Red", "Blue", "Polka dots")
+     districts <- paste("District", 1:12)
+     simulate_shares(parties, districts)
 
-# specify a known list of parties and districts
-parties <- c("Green", "Red", "Blue", "Polka dots")
-districts <- paste("District", 1:12)
-simulate_shares(parties, districts)
+     # specify a different vote share distribution function, and apply a normalization
+     # step to ensure vote shares within each district sum up to 1.
+     simulate_shares(parties, districts, func = runif, normalize = TRUE)
 
-# specify a different vote share distribution function, and apply a normalization
-# step to ensure vote shares within each district sum up to 1.
-simulate_shares(parties, districts, func = runif, normalize = TRUE)
-
-# the distribution function maintains party order, one may want to give parties
-# a vote share depending on their order to maintain some consistency across districts.
-# E.g., for a fixed linear party size from largest to smallest party:
-vote_share_linear <- function(n_parties) {
-   n_parties:1
-}
-simulate_shares(parties, districts, func = vote_share_linear, normalize = TRUE)
+     # the distribution function maintains party order, one may want to give parties
+     # a vote share depending on their order to maintain some consistency across districts.
+     # E.g., for a fixed linear party size from largest to smallest party:
+     vote_share_linear <- function(n_parties) {
+        n_parties:1
+     }
+     simulate_shares(parties, districts, func = vote_share_linear, normalize = TRUE)
 
 }

@@ -7,9 +7,9 @@
 allocate_seats_nl(parties, votes)
 }
 \arguments{
-\item{parties}{vector of party names or integer number of parties}
+\item{parties}{vector of party names}
 
-\item{votes}{vector of vote counts for each party, of the same length as \code{parties}}
+\item{votes}{vector of vote counts, of the same length as \code{parties}}
 }
 \value{
 see \code{allocate_votes}

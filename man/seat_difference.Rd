@@ -7,7 +7,7 @@
 seat_difference(
   votes,
   seats,
-  baseline_seats_fn = function(votes) allocate_seats_nl(length(votes), votes)
+  baseline_seats_fn = function(votes) allocate_seats_nl(1:length(votes), votes)$seats
 )
 }
 \arguments{
@@ -30,4 +30,16 @@ Absolute difference in seats from a known baseline seats allocation method.
 Calculates seat allocation under the baseline, then returns the sum of absolute
 seat differences. The sum is divided by two, as each seat gained by one party,
 is always a seat lost by another party.
+}
+\examples{
+# Compare absolute seat difference between d'Hondt and Hare allocation
+votes <- c(0.4, 0.3, 0.2, 0.06, 0.03, 0.01) * 1e6
+parties <- paste("Party", letters[1:6])
+outcome <- allocate_seats(parties, votes, 120)
+
+# seat_difference takes a baseline function with a vote vector as its only
+# argument, let's creata a thin wrapper that sets the other arguments of
+# allocate_seats appropriately.
+baseline_fn <- \(votes) allocate_seats(1:length(votes), votes, 120, method = "hare")$seats
+seat_difference(votes, outcome$seats, baseline_fn)
 }

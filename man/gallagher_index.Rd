@@ -25,3 +25,14 @@ A Gallagher index of zero corresponds to perfectly proportional seat allocation,
 whereas a high index indicates greater disproportionality. The Gallagher index
 ranges from 0 to 100.
 }
+\examples{
+# Gallagher index for a mostly proportional outcome
+votes <- c(0.4, 0.3, 0.2, 0.06, 0.03, 0.01) * 1e6
+outcome <- allocate_seats(paste("Party", letters[1:6]), votes, 120)
+gallagher_index(votes, outcome$seats)
+
+# Using Hare allocation
+outcome_hare <- allocate_seats(paste("Party", letters[1:6]), votes, 120, method = "hare")
+gallagher_index(votes, outcome_hare$seats)
+
+}

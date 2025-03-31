@@ -24,3 +24,15 @@ A Loosemore-Hanby index of zero corresponds to perfectly proportional seat alloc
 whereas a high index indicates greater disproportionality. The Loosemore-Hanby
 index ranges from 0 to 1.
 }
+\examples{
+# Loosemore-Hanby index for a mostly proportional outcome
+votes <- c(0.4, 0.3, 0.2, 0.06, 0.03, 0.01) * 1e6
+parties <- paste("Party", letters[1:6])
+outcome <- allocate_seats(parties, votes, 120)
+loosemore_hanby_index(votes, outcome$seats)
+
+# Using Hare allocation
+outcome_hare <- allocate_seats(parties, votes, 120, method = "hare")
+loosemore_hanby_index(votes, outcome_hare$seats)
+
+}

@@ -6,7 +6,7 @@
 \alias{regional-package}
 \title{regional: Simulation and evaluation of multi-candidate district elections under various circumstances}
 \description{
-Simulation and evaluation of multi-candidate district elections under various circumstances. Seat allocation under common allocation methods, vote share thresholds, and accounting for already allocated seats in multi-phase seat allocation (e.g., when allocation national seats to compensate for disproportionality in seats awarded in districts)
+Seat allocation under common allocation methods, vote share thresholds, and accounting for already allocated seats in multi-phase seat allocation (e.g., when allocation national seats to compensate for disproportionality in seats awarded in districts). This package is heavily inspired by the `electoral` package, but rewritten from the ground up.
 }
 \author{
 \strong{Maintainer}: Karel Kroeze \email{k.a.kroeze@utwente.nl}

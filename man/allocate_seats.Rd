@@ -30,9 +30,9 @@ yet been allocated.}
 to 'dh' for d'Hondt method.}
 
 \item{threshold}{vote share required to be eligible for any seats. Defaults to
-0, should be in the range \link{0,1}. Common values are between 0 and 0.05.}
+0, should be in the range [0,1]. Common values are between 0 and 0.05.}
 
-\item{fixed_seats_override_threshold}{should parties with fixed seats automatically
+\item{fixed_seat_overrides_threshold}{should parties with fixed seats automatically
 be eligible for remainder seat allocation? This is common in some parliamentary
 systems. Defaults to \code{FALSE}.}
 }
@@ -50,4 +50,42 @@ representation. Calculated as \code{votes / sum(votes) * seats}}
 \description{
 Given a set of parties and associated vote counts, allocate \code{seats} number of
 seats using one of several common methods of seat allocation.
+}
+\examples{
+# Given a set of parties ...
+parties <- paste("Party", letters[1:6])
+
+# ... a vector of votes cast ...
+votes <- round(runif(6) * 1e6)
+
+# ... and total number of seats available ...
+seats <- 100
+
+# ... allocate seats to parties proportional to their vote count
+allocate_seats(parties, votes, seats)
+
+# We can also add a number of 'fixed' seats, that parties are
+# guaranteed to get.
+# For instance, we can ensure each party gets at least 10 seats...
+allocate_seats(parties, votes, seats, fixed_seats = rep(10, 6))
+
+# We may want limit fragmentation and only assign seats to parties
+# larger than a given threshold.
+# Create known list of large and small parties
+votes <- round(c(0.4, 0.3, 0.2, 0.06, 0.03, 0.01) * 1e6)
+allocate_seats(parties, votes, seats, threshold = 0.05)
+
+# Or even do both at the same time...
+allocate_seats(parties, votes, seats, threshold = 0.05, fixed_seats = rep(10, 6))
+# note that fixed seats are NEVER taken away, regardless of the
+# used threshold. The number of seats available to remaining parties
+# is automatically compensated.
+
+# In some electoral systems, parties that gain a regional seat
+# are exempt from a national threshold. If we give all parties a single
+# fixed seat, we can see that Party e will be allocated 2 additional
+# seats, even though the party does not meet the vote share threshold.
+# Party f would now also be eligible for additional seats, but doesn't
+# have to vote share to be allocated one.
+allocate_seats(parties, votes, seats, threshold = 0.05, fixed_seats = rep(1, 6), fixed_seat_overrides_threshold = TRUE)
 }
