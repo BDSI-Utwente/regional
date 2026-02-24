@@ -148,7 +148,7 @@ allocate_seats <- function(
     )
 
   # expand grid of party/quota needed for 1:n seats
-  .seats <- tidyr::expand_grid(party = parties, quota_votes) %>%
+  .seat_quotas <- tidyr::expand_grid(party = parties, quota_votes) %>%
     dplyr::right_join(party_seats, by = dplyr::join_by(party)) %>%
     dplyr::mutate(
       # add rank-order for potential seats, lowest quota_votes (used) first
@@ -162,19 +162,22 @@ allocate_seats <- function(
     # potential seats must be eligible (i.e., meet threshold) or fixed
     dplyr::filter(eligible | seat_is_fixed) %>%
     
-    # unless lr_extra_seat_resolution_method == FALSE, we can only give seats 
-    # if the party has at least a claim to a partial seat.
-    \(x) ifelse(lr_extra_seat_resolution_method, dplyr::filter(x, seat_is_fixed | rank <= ceiling(votes / quota)), x) %>%
-
     # sort potential seats by fixed status, then remaining votes quota, and last
     # by a random component to settle ties
     dplyr::arrange(
       dplyr::desc(seat_is_fixed),
       dplyr::desc(votes - quota_votes),
       stats::rnorm(dplyr::n())
-    ) %>%
+    ) 
+    
+  # unless lr_extra_seat_resolution_method == FALSE, we can only give seats 
+  # if the party has at least a claim to a partial seat.
+  if (!isFALSE(lr_extra_seat_resolution_method)) {
+    .seat_quotas <- .seat_quotas %>% dplyr::filter(seat_is_fixed | rank <= ceiling(votes / quota))
+  }
 
-    # select top n rows, where n is the number of seats
+  # to get allocated seats, we simply select the top n rows
+  .seats <- .seat_quotas %>% 
     dplyr::slice_head(n = seats) %>%
 
     # summarize as seats per party
@@ -197,11 +200,11 @@ allocate_seats <- function(
     )
   
   # if necessary, allocate remaining seats
-  if (sum(.seats$seats) < seats && lr_extra_seat_resolution_method){
+  if (!isFALSE(lr_extra_seat_resolution_method) && sum(.seats$seats) < seats){
     # do another iteration of seat assignment, treating assigned seats as fixed
-    message("There are more remainder seats than there are parties! Allocating extra remainder seats using", lr_extra_seat_resolution_method)
+    message("There are more remainder seats than there are parties! Allocating extra remainder seats using ", lr_extra_seat_resolution_method)
     .extra_seats <- allocate_seats(
-      party = .seats$party,
+      parties = .seats$party,
       votes = .seats$votes,
       seats = seats,
       fixed_seats = .seats$seats,
