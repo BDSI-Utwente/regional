@@ -1,6 +1,6 @@
 Package: regional
 Title: Simulation and evaluation of multi-candidate district elections under various circumstances
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: 
     person("Karel", "Kroeze", , "k.a.kroeze@utwente.nl", role = c("aut", "cre"))
 Description: 
