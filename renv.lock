@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.5.1",
+    "Version": "4.5.2",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -1481,13 +1481,15 @@
       "SystemRequirements": "GNU make",
       "RoxygenNote": "7.2.1",
       "License": "GPL-3",
-      "Author": "Denis Cohen [aut], Chris Hanretty [cre, aut]",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "chrishanretty",
       "RemoteRepo": "sharesimulatoR",
-      "RemoteRef": "main",
-      "RemoteSha": "1cade9a67af31ebfcd6f195bb1afb7c02be47101"
+      "RemoteUsername": "chrishanretty",
+      "RemotePkgRef": "chrishanretty/sharesimulatoR@1cade9a67af31ebfcd6f195bb1afb7c02be47101",
+      "RemoteRef": "1cade9a67af31ebfcd6f195bb1afb7c02be47101",
+      "RemoteSha": "1cade9a67af31ebfcd6f195bb1afb7c02be47101",
+      "NeedsCompilation": "no",
+      "Author": "Denis Cohen [aut], Chris Hanretty [cre, aut]"
     },
     "shiny": {
       "Package": "shiny",
